@@ -1,0 +1,17 @@
+{
+  "name": "flow",
+  "app_id": "",
+  "documentRoot": "www",
+  "createDocumentRoot": true,
+  "watchPatterns": [
+    "www/dist/**/*"
+  ],
+  "gulpStartupTasks": [
+    "default",
+    "watch"
+  ],
+  "constants": {
+    "env": "dev",
+    "endpoint": "http://youapigoeshere.com"
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "name": "Your Application",
+    "deps": ["ngAnimate"],
+    "wrap": "commonjs",
+    "constants": {
+        "endpoint": "http://yourendpointhere.com",
+        "env": "dev"
+    }
+}
