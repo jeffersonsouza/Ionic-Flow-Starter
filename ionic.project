@@ -4,14 +4,13 @@
   "documentRoot": "www",
   "createDocumentRoot": true,
   "watchPatterns": [
-    "www/dist/**/*"
+    "www/**/*"
   ],
   "gulpStartupTasks": [
-    "default",
     "watch"
   ],
   "constants": {
-    "env": "dev",
+    "env": "development",
     "endpoint": "http://youapigoeshere.com"
   }
 }

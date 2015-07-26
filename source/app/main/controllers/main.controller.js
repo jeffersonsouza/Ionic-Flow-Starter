@@ -1,4 +1,4 @@
 angular.module('flow')
-.controller('MainController', ['$scope', function($scope) {
+    .controller('MainController', ['$scope', function ($scope) {
 
-}]);
+    }]);

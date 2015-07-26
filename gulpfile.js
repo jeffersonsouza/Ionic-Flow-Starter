@@ -4,12 +4,15 @@
 var gulp = require('gulp');
     gutil = require('gulp-util'),
     bower = require('bower'),
-    sh = require('shelljs');
+    sh = require('shelljs'),
+    fs = require('fs');
 
 var plugins = require("gulp-load-plugins")({
     pattern: ['gulp-*', 'gulp.*'],
     replaceString: /\bgulp[\-.]/
 });
+
+var ionicProject = JSON.parse(fs.readFileSync('./ionic.project'));
 
 /**
  * Application Paths
@@ -21,36 +24,14 @@ var basePaths = {
     bower: 'source/lib',
     e2e: 'e2e'
 };
-var paths = {
-    images: {
-        src: basePaths.src + '/assets/images',
-        dest: basePaths.dest + '/images'
-    },
-    scripts: {
-        src: basePaths.src + '/main',
-        dest: basePaths.dest + '/js'
-    },
-    styles: {
-        src: basePaths.src + '/sass',
-        dest: basePaths.dest + '/css'
-    }
-};
-
-var appFiles = {
-    styles: paths.styles.src + '**/*.scss',
-    scripts: [paths.scripts.src + 'scripts.js']
-};
 
 var paths = {
-    sass: ['source/assets/sass/**/*.scss'],
-    templates: "source/**/templates/**/*.{html,jade}",
+    scripts: basePaths.src + '/app/**/*.js',
+    sass: [basePaths.src + '/assets/sass/**/*.scss', basePaths.src + '/app/**/*.scss'],
+    templates: ["source/**/templates/**/*.{html,jade}", "source/app/menu.jade"],
     images: "source/assets/images/*",
     fonts: "source/assets/fonts/*.*"
 };
-
-gulp.task('plugins', function(){
-    console.log(plugins);
-});
 
 var changeEvent = function(evt) {
     gutil.log('File', gutil.colors.cyan(evt.path.replace(new RegExp('/.*(?=/' + basePaths.src + ')/'), '')), 'was', gutil.colors.magenta(evt.type));
@@ -58,40 +39,53 @@ var changeEvent = function(evt) {
 
 gulp.task('default', ['usemin', 'templates', 'fonts', 'images', 'config']);
 
+/**
+ * Get your index.html scripts and styles and merge
+ */
 gulp.task('usemin', function () {
     gulp.src('./source/index.html')
         .pipe(plugins.usemin({
-            css: [plugins.sass({errLogToConsole: true}), plugins.minifyCss(), 'concat'],
-            cssapp: [plugins.sass({errLogToConsole: true}), plugins.minifyCss(), 'concat'],
+            css: [plugins.sass({errLogToConsole: true}), plugins.if(ionicProject.constants.env == 'production', plugins.minifyCss()), 'concat'],
+            cssapp: [plugins.sass({errLogToConsole: true}), plugins.if(ionicProject.constants.env == 'production', plugins.minifyCss()), 'concat'],
             html: [plugins.htmlmin({collapseWhitespace: true})],
-            jsvendor: [plugins.uglify(), plugins.rev()],
-            jsapp: [plugins.uglify(), plugins.rev()]
+            jsvendor: [plugins.uglify(), plugins.if(ionicProject.constants.env == 'production', plugins.rev())],
+            jsapp: [plugins.uglify(), plugins.if(ionicProject.constants.env == 'production', plugins.rev())]
         }))
         .pipe(gulp.dest('./www'));
 });
 
+/**
+ * Get your .htlm or jade files and optime to angular template cache
+ */
 gulp.task('templates', function () {
-    //console.log(plugins.if(true, console.log('Jeff')));
     gulp.src(paths.templates)
         .pipe(plugins.if(/[.]jade$/, plugins.jade()))
         .pipe(plugins.angularHtmlify())
         .pipe(plugins.angularTemplatecache({
             standalone: false,
-            module: "flow"
+            module: ionicProject.name
         }))
         .pipe(gulp.dest('./www/js'));
 });
-
+/**
+ * Copy your fonts
+ */
 gulp.task('fonts', function () {
     gulp.src(paths.fonts)
         .pipe(gulp.dest('./www/fonts'));
 });
 
+/**
+ * Copy your images
+ */
 gulp.task('images', function () {
     gulp.src(paths.images)
         .pipe(gulp.dest('./www/images'));
 });
 
+/**
+ * create constants in angular from parameter 'constants' present in your ionic.project
+ */
 gulp.task('config', function () {
     gulp.src('ionic.project')
         .pipe(plugins.ngConstant())
@@ -99,7 +93,11 @@ gulp.task('config', function () {
 });
 
 gulp.task('watch', function() {
-  //gulp.watch(paths.sass, ['sass']);
+    gulp.watch(['source/index.html', paths.scripts, paths.sass], ['usemin']);
+    gulp.watch(paths.images, ['images']);
+    gulp.watch(paths.templates, ['templates']);
+    gulp.watch(paths.fonts, ['fonts']);
+    gulp.watch('ionic.project', ['config']);
 });
 
 gulp.task('install', ['git-check'], function() {
